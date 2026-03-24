@@ -1,0 +1,267 @@
+{
+  "name": "Football-ETL",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "319ec837-6e13-4f5b-8b0b-3ff672824df4",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.football-data.org/v4/competitions/PL/standings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Auth-Token",
+              "value": "={{ $env.FOOTBALL_API_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "54ebe9b7-7636-49cd-81c5-b28602382b47",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "standings[0].table",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "633589aa-b16f-4db8-8329-52aab6dda789",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"Position\": {{ $json.position }},\n  \"team_id\": {{ $json.team.id }},\n  \"team_name\":\t{{ $json.team.name }},\n  \"played\": {{ $json.playedGames }},\n  \"won\": {{ $json.won }},\n  \"draw\": {{ $json.draw }},\n  \"lost\": {{ $json.lost }},\n  \"points\":{{ $json.points }},\n  \"goals_for\":{{ $json.goalsFor }},\n  \"goals_against\":{{ $json.goalsAgainst }},\n  \"goal_diff\":\t{{ $json.goalDifference }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        0
+      ],
+      "id": "efe650bd-d377-4149-943d-4fc304ecfcc1",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "pl_standings",
+          "mode": "list",
+          "cachedResultName": "pl_standings"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.team_id }}",
+            "position": "={{ $json.Position }}",
+            "played": "={{ $json.played }}",
+            "points": "={{ $json.points }}",
+            "goals_for": "={{ $json.goals_for }}",
+            "goals_against": "={{ $json.goals_against }}",
+            "goal_diff": "={{ $json.goal_diff }}",
+            "team_name": "={{ $json.team_name }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "position",
+              "displayName": "position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "team_name",
+              "displayName": "team_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "played",
+              "displayName": "played",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "points",
+              "displayName": "points",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "goals_for",
+              "displayName": "goals_for",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "goals_against",
+              "displayName": "goals_against",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "goal_diff",
+              "displayName": "goal_diff",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        832,
+        0
+      ],
+      "id": "c23f7d5a-1027-4255-8546-8c9aadf2af28",
+      "name": "Insert or update rows in a table",
+      "credentials": {
+        "postgres": {
+          "id": "D3igPATXAFv70c2D",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Insert or update rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "f91d1491-4688-42d1-ab62-a9fc2a80dfd9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1cdc9cbac01165c6d428332009d595c0d77989510e33a6eddfd72da613337246"
+  },
+  "id": "33rfMJEPQiNE8c3cjZYLT",
+  "tags": []
+}
