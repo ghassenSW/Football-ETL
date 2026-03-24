@@ -1,0 +1,10 @@
+# Ignore Docker data folders
+n8n_data/
+postgres_data/
+
+# Ignore environment files containing passwords
+.env
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
